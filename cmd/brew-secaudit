@@ -1,0 +1,27 @@
+#!/bin/bash
+#:  * `secaudit` [`--json`] [`--all`] [`--verbose`] [<formula>|<cask>|<user>/<tap>|<path> ...]
+#:
+#:  Security-scan formulae, casks or whole taps for install-time attack patterns
+#:  (pipe-to-shell, quarantine stripping, Gatekeeper disable, credential exfil,
+#:  launchd persistence, unverified downloads, ...). With no arguments, scans
+#:  everything currently installed. Exits 2 if anything is HIGH or CRITICAL.
+#:
+#:      --cask <name>      Treat <name> as a cask.
+#:      --formula <name>   Treat <name> as a formula.
+#:      --tap <user/repo>  Scan every formula and cask in a tap.
+#:      --installed        Scan all installed formulae and casks (default).
+#:      --json             Machine-readable output.
+#:      --all              Also list targets that scan SAFE.
+#:      --verbose          Show informational (unscored) context.
+set -euo pipefail
+SELF="${BASH_SOURCE[0]}"
+while [ -L "$SELF" ]; do SELF="$(readlink "$SELF")"; done
+HERE="$(cd "$(dirname "$SELF")/.." && pwd)"
+PY="$(command -v python3 || true)"
+[ -n "$PY" ] || PY=/usr/bin/python3
+pos=0
+for a in "$@"; do case "$a" in --json|--all|--verbose|--every-rb) ;; *) pos=1 ;; esac; done
+if [ "$pos" = 0 ]; then
+  exec "$PY" -I "$HERE/homebrew_audit.py" --installed "$@"
+fi
+exec "$PY" -I "$HERE/homebrew_audit.py" "$@"
