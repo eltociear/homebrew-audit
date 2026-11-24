@@ -4,6 +4,7 @@
 
 ```bash
 brew tap eltociear/audit
+brew trust --command eltociear/audit/secaudit   # Homebrew 7+: allow just this command
 brew secaudit                       # scan everything you have installed
 brew secaudit some-owner/some-tap   # scan a whole third-party tap before tapping it
 brew secaudit wget                  # a homebrew-core formula
@@ -99,7 +100,9 @@ tap's own CI.
 
 `brew secaudit` is a [Homebrew external command](https://docs.brew.sh/External-Commands) shipped
 by this tap (`cmd/brew-secaudit`). It runs the same single Python file with the system
-`python3`. With no arguments it scans what's installed.
+`python3`. With no arguments it scans what's installed. Homebrew 7+ won't run commands from an untrusted tap, so
+`brew trust --command eltociear/audit/secaudit` trusts this one command without trusting the
+whole tap. Prefer not to trust anything? Run `python3 homebrew_audit.py` directly. It's one file.
 
 ## Caveats
 
