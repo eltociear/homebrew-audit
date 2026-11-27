@@ -1,5 +1,5 @@
 #!/bin/bash
-#:  * `secaudit` [`--json`] [`--all`] [`--verbose`] [<formula>|<cask>|<user>/<tap>|<path> ...]
+#:  * `secaudit` [`--json`|`--sarif`] [`--fail-on` <level>] [`--all`] [`--verbose`] [<formula>|<cask>|<user>/<tap>|<path> ...]
 #:
 #:  Security-scan formulae, casks or whole taps for install-time attack patterns
 #:  (pipe-to-shell, quarantine stripping, Gatekeeper disable, credential exfil,
@@ -10,7 +10,9 @@
 #:      --formula <name>   Treat <name> as a formula.
 #:      --tap <user/repo>  Scan every formula and cask in a tap.
 #:      --installed        Scan all installed formulae and casks (default).
-#:      --json             Machine-readable output.
+#:      --json             Machine-readable output (family schema eltociear-audit/1).
+#:      --sarif            SARIF 2.1.0 output (GitHub code scanning).
+#:      --fail-on <level>  Exit 2 at critical|high|medium|low (default high); never = always 0.
 #:      --all              Also list targets that scan SAFE.
 #:      --verbose          Show informational (unscored) context.
 set -euo pipefail
@@ -20,7 +22,15 @@ HERE="$(cd "$(dirname "$SELF")/.." && pwd)"
 PY="$(command -v python3 || true)"
 [ -n "$PY" ] || PY=/usr/bin/python3
 pos=0
-for a in "$@"; do case "$a" in --json|--all|--verbose|--every-rb) ;; *) pos=1 ;; esac; done
+skip=0
+for a in "$@"; do
+  if [ "$skip" = 1 ]; then skip=0; continue; fi
+  case "$a" in
+    --json|--sarif|--all|--verbose|--every-rb|--fail-on=*) ;;
+    --fail-on) skip=1 ;;
+    *) pos=1 ;;
+  esac
+done
 if [ "$pos" = 0 ]; then
   exec "$PY" -I "$HERE/homebrew_audit.py" --installed "$@"
 fi
